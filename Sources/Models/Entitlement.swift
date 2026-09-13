@@ -320,6 +320,7 @@ public extension Entitlement {
 
 extension Entitlement: Identifiable {
     public var id: String { rawValue }
+    public var name: String { displayName }
 }
 
 public enum EntitlementValueType: String, Codable, Sendable, CaseIterable, Identifiable {
