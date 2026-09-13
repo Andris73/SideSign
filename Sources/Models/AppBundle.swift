@@ -46,6 +46,10 @@ public struct AppBundle: Sendable, Identifiable, Hashable, Equatable {
         InfoPlistParser.resolveInfoPlistURL(for: fileURL)
     }
 
+    public var executableName: String? {
+        infoPlist["CFBundleExecutable"] as? String
+    }
+
     public var entitlementsString: String {
         loadEntitlementsString()
     }
