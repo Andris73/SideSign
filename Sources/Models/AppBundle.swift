@@ -34,6 +34,10 @@ public struct AppBundle: Sendable, Identifiable, Hashable, Equatable {
         loadExtensions()
     }
 
+    public var isExtension: Bool {
+        fileURL.pathExtension.lowercased() == "appex"
+    }
+
     public var entitlements: [String: any Sendable] {
         loadEntitlements()
     }
@@ -193,5 +197,32 @@ public extension AppBundle {
         var parser = try InfoPlistParser(plistURL: infoPlistURL)
         parser.merge(plist, deep: deep)
         try parser.write(to: infoPlistURL)
+    }
+
+    var allEntitlements: [String: [String: any Sendable]] {
+        var map: [String: [String: any Sendable]] = [bundleIdentifier: entitlements]
+        for ext in appExtensions {
+            map[ext.bundleIdentifier] = ext.entitlements
+        }
+        return map
+    }
+
+    var allAppBundles: [AppBundle] {
+        [self] + Array(appExtensions).sorted { $0.bundleIdentifier.localizedCaseInsensitiveCompare($1.bundleIdentifier) == .orderedAscending }
+    }
+
+    func appExtension(withBundleIdentifier id: String) -> AppBundle? {
+        appExtensions.first { $0.bundleIdentifier == id }
+    }
+
+    func appBundle(withBundleIdentifier id: String) -> AppBundle? {
+        if bundleIdentifier == id {
+            return self
+        }
+        return appExtension(withBundleIdentifier: id)
+    }
+
+    func entitlements(for bundleIdentifier: String) -> [String: any Sendable]? {
+        allEntitlements[bundleIdentifier]
     }
 }
