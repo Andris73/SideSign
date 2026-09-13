@@ -46,8 +46,12 @@ public struct AppBundle: Sendable, Identifiable, Hashable, Equatable {
         InfoPlistParser.resolveInfoPlistURL(for: fileURL)
     }
 
+    public var executableURL: URL? {
+        bundle.executableURL
+    }
+
     public var executableName: String? {
-        infoPlist["CFBundleExecutable"] as? String
+        bundle.executableURL?.lastPathComponent
     }
 
     public var entitlementsString: String {
@@ -145,7 +149,9 @@ public struct AppBundle: Sendable, Identifiable, Hashable, Equatable {
 public extension AppBundle {
 
     func dumpMachOInfo() -> String {
-        let executableURL = bundle.executableURL ?? fileURL.appendingPathComponent(fileURL.deletingPathExtension().lastPathComponent)
+        guard let executableURL = self.executableURL else {
+            return "[SideSign] Executable binary not found for \(fileURL.lastPathComponent)"
+        }
         guard let parser = try? MachOParser(url: executableURL) else {
             return "[SideSign] MachOParser failed to load \(executableURL.lastPathComponent)"
         }
