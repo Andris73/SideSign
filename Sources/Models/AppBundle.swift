@@ -37,6 +37,10 @@ public struct AppBundle: Sendable, Identifiable, Hashable, Equatable {
         loadEntitlements()
     }
 
+    public var infoPlist: [String: any Sendable] {
+        loadInfoPlist()
+    }
+
     public var entitlementsString: String {
         loadEntitlementsString()
     }
@@ -175,6 +179,15 @@ public struct AppBundle: Sendable, Identifiable, Hashable, Equatable {
 
     private func loadEntitlementsString() -> String {
         (try? MachOParser.entitlements(at: fileURL)) ?? ""
+    }
+
+    private func loadInfoPlist() -> [String: any Sendable] {
+        let infoURL = bundle.bundleURL.appendingPathComponent("Info.plist")
+        guard let data = try? Data(contentsOf: infoURL),
+              let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: any Sendable] else {
+            return [:]
+        }
+        return plist
     }
 }
 
