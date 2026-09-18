@@ -18,7 +18,7 @@ extension FileManager {
     private static let defaultFilePermissions: UInt32 = 0o644
     private static let defaultDirPermissions: UInt32  = 0o755
 
-    func unzipArchive(at archiveURL: URL, to directoryURL: URL, progress: Progress? = nil) throws {
+    public func unzipArchive(at archiveURL: URL, to directoryURL: URL, progress: Progress? = nil) throws {
         verboseLog("[SideSign] FileManager.unzipArchive started for archive: \(archiveURL.path) to: \(directoryURL.path)")
         let archive = try Archive.Reader.open(at: archiveURL)
         try archive.goToFirstFile()
