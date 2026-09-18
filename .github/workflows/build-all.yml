@@ -123,7 +123,7 @@ jobs:
 
       - name: Install Unicorn (Headers & Static Library)
         run: |
-          curl -fsSL "https://github.com/mahee96/unicorn/releases/download/2.1.4-multiarch/unicorn-linux-${{ matrix.arch }}.tar.gz" -o /tmp/unicorn.tar.gz
+          curl -fsSL "https://github.com/mahee96/unicorn/releases/latest/download/unicorn-linux-${{ matrix.arch }}.tar.gz" -o /tmp/unicorn.tar.gz
           mkdir -p /tmp/unicorn-pkg
           tar -xzf /tmp/unicorn.tar.gz -C /tmp/unicorn-pkg
           sudo mkdir -p /usr/include/unicorn /usr/local/include/unicorn /usr/lib /usr/local/lib
@@ -234,7 +234,7 @@ jobs:
 
           if (-not (Test-Path "C:\unicorn\include\unicorn\unicorn.h")) {
             Write-Host "Unicorn not found in cache, downloading..."
-            Invoke-WebRequest -Uri "https://github.com/mahee96/unicorn/releases/download/2.1.4-multiarch/unicorn-windows-${{ matrix.arch }}.zip" -OutFile C:\unicorn.zip
+            Invoke-WebRequest -Uri "https://github.com/mahee96/unicorn/releases/latest/download/unicorn-windows-${{ matrix.arch }}.zip" -OutFile C:\unicorn.zip
             Expand-Archive -Path C:\unicorn.zip -DestinationPath C:\unicorn -Force
           } else {
             Write-Host "Unicorn restored from cache!"
@@ -370,7 +370,7 @@ jobs:
 
       - name: Install Unicorn (Headers & Library)
         run: |
-          curl -fsSL "https://github.com/mahee96/unicorn/releases/download/2.1.4-multiarch/unicorn-android-${{ matrix.unicorn_arch }}.tar.gz" -o /tmp/unicorn.tar.gz
+          curl -fsSL "https://github.com/mahee96/unicorn/releases/latest/download/unicorn-android-${{ matrix.unicorn_arch }}.tar.gz" -o /tmp/unicorn.tar.gz
           mkdir -p /tmp/unicorn-pkg
           tar -xzf /tmp/unicorn.tar.gz -C /tmp/unicorn-pkg
 
