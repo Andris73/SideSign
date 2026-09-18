@@ -170,4 +170,44 @@ extension FileManager {
         verboseLog("[SideSign] FileManager.zipAppBundle completed. Packaged ipa path: \(ipaURL.path)")
         return ipaURL
     }
+
+    public func zipDirectory(at directoryURL: URL, to destinationZipURL: URL, compressionLevel: CompressionLevel = .standard) throws {
+        verboseLog("[SideSign] FileManager.zipDirectory starting for: \(directoryURL.path) to \(destinationZipURL.path)")
+        if fileExists(atPath: destinationZipURL.path) {
+            try removeItem(at: destinationZipURL)
+        }
+        let writer = try Archive.Writer.create(at: destinationZipURL)
+        writer.setCompressLevel(compressionLevel.rawValue)
+
+        let canonicalDirURL = directoryURL.resolvingSymlinksInPath()
+        let basePath = canonicalDirURL.path.hasSuffix("/") ? canonicalDirURL.path : canonicalDirURL.path + "/"
+
+        guard let enumerator = self.enumerator(
+            at: canonicalDirURL,
+            includingPropertiesForKeys: [.isDirectoryKey]
+        ) else { return }
+
+        for case let fileURL as URL in enumerator {
+            let canonicalFileURL = fileURL.resolvingSymlinksInPath()
+            let isDir = (try? canonicalFileURL.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true
+
+            let fullPath = canonicalFileURL.path
+            guard fullPath.hasPrefix(basePath) else { continue }
+            let relative = String(fullPath.dropFirst(basePath.count))
+            guard !relative.isEmpty else { continue }
+
+            let zipPath = relative + (isDir ? "/" : "")
+            let attributes = try self.attributesOfItem(atPath: canonicalFileURL.path)
+            let posixPermissions = (attributes[.posixPermissions] as? NSNumber)?.uint32Value ?? (isDir ? Self.defaultDirPermissions : Self.defaultFilePermissions)
+
+            if isDir {
+                let permissions = Self.S_IFDIR + posixPermissions
+                try writer.writeFile(path: zipPath, data: nil, permissions: permissions)
+            } else {
+                try writer.addFile(at: canonicalFileURL, pathInZip: zipPath)
+            }
+        }
+        try writer.close()
+        verboseLog("[SideSign] FileManager.zipDirectory completed: \(destinationZipURL.path)")
+    }
 }
