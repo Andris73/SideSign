@@ -151,6 +151,16 @@ public struct AppBundleSigner: CodeSignerAPI, Sendable {
                 try prepare(ext)
             }
 
+            for watchApp in appBundle.watchApps {
+                verboseLog("[SideSign] Found watch app: \(watchApp.bundleIdentifier) at \(watchApp.fileURL.path)")
+                try prepare(watchApp)
+
+                for ext in watchApp.appExtensions {
+                    verboseLog("[SideSign] Found watch app extension: \(ext.bundleIdentifier) at \(ext.fileURL.path)")
+                    try prepare(ext)
+                }
+            }
+
             let keyData = try keyStore.exportP12()
 
             verboseLog("[SideSign] Invoking CodeSigner.sign for appPath: \(appBundle.fileURL.path)")
@@ -174,7 +184,7 @@ public struct AppBundleSigner: CodeSignerAPI, Sendable {
                         if resolved == appResolved {
                             targetType = .mainAppBundleDirectory
                             xml = entitlementsByURL[appResolved] ?? ""
-                        } else if let matchedExt = appBundle.appExtensions.first(where: { ext in
+                        } else if let matchedExt = appBundle.allNestedBundles.first(where: { ext in
                             let extResolved = ext.fileURL.resolvingSymlinksInPath()
                             return resolved == extResolved ||
                                    resolved.path.hasPrefix(extResolved.path + "/") ||

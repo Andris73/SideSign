@@ -34,8 +34,20 @@ public struct AppBundle: Sendable, Identifiable, Hashable, Equatable {
         loadExtensions()
     }
 
+    /// Nested watch applications bundled under `Watch/` (e.g. `Watch/MyApp Watch App.app`).
+    /// These are full `.app` bundles, not `.appex` extensions, so `appExtensions` never sees them.
+    public var watchApps: Set<AppBundle> {
+        loadWatchApps()
+    }
+
     public var isExtension: Bool {
         fileURL.pathExtension.lowercased() == "appex"
+    }
+
+    /// True when this bundle is a watchOS app nested inside an iOS app's `Watch/` directory.
+    public var isWatchApp: Bool {
+        fileURL.pathExtension.lowercased() == "app" &&
+        fileURL.deletingLastPathComponent().lastPathComponent == "Watch"
     }
 
     public var entitlements: [String: any Sendable] {
@@ -131,6 +143,21 @@ public struct AppBundle: Sendable, Identifiable, Hashable, Equatable {
         return Set(extensions)
     }
 
+    private func loadWatchApps() -> Set<AppBundle> {
+        let watchURL = fileURL.appendingPathComponent("Watch")
+        guard let contents = try? FileManager.default.contentsOfDirectory(
+            at: watchURL,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        ) else {
+            return []
+        }
+        let watchApps = contents
+            .filter { $0.pathExtension.lowercased() == "app" }
+            .compactMap { AppBundle(fileURL: $0) }
+        return Set(watchApps)
+    }
+
     private func loadEntitlements() -> [String: any Sendable] {
         if !entitlementsString.isEmpty,
            let data = entitlementsString.data(using: .utf8),
@@ -214,11 +241,28 @@ public extension AppBundle {
         for ext in appExtensions {
             map[ext.bundleIdentifier] = ext.entitlements
         }
+        for watchApp in watchApps {
+            map[watchApp.bundleIdentifier] = watchApp.entitlements
+            for ext in watchApp.appExtensions {
+                map[ext.bundleIdentifier] = ext.entitlements
+            }
+        }
         return map
     }
 
+    /// All nested bundles that require their own provisioning profile:
+    /// app extensions, watch apps, and the watch apps' own extensions.
+    var allNestedBundles: [AppBundle] {
+        var nested = Array(appExtensions)
+        for watchApp in watchApps {
+            nested.append(watchApp)
+            nested.append(contentsOf: watchApp.appExtensions)
+        }
+        return nested.sorted { $0.bundleIdentifier.localizedCaseInsensitiveCompare($1.bundleIdentifier) == .orderedAscending }
+    }
+
     var allAppBundles: [AppBundle] {
-        [self] + Array(appExtensions).sorted { $0.bundleIdentifier.localizedCaseInsensitiveCompare($1.bundleIdentifier) == .orderedAscending }
+        [self] + allNestedBundles
     }
 
     func appExtension(withBundleIdentifier id: String) -> AppBundle? {
@@ -229,7 +273,7 @@ public extension AppBundle {
         if bundleIdentifier == id {
             return self
         }
-        return appExtension(withBundleIdentifier: id)
+        return allNestedBundles.first { $0.bundleIdentifier == id }
     }
 
     func entitlements(for bundleIdentifier: String) -> [String: any Sendable]? {
