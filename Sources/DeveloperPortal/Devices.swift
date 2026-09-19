@@ -47,6 +47,11 @@ public extension DeveloperPortal {
         } else if type.contains(.appleTV) {
             parameters["DTDK_Platform"] = "tvos"
             parameters["subPlatform"] = "tvOS"
+        } else if type.contains(.appleWatch) {
+            // watchOS devices must be registered with the watchos platform, or profiles
+            // generated for watch bundles won't validate on the watch (issue #229).
+            // Same trick as Xcode/isideload: ios endpoint + DTDK_Platform=watchos.
+            parameters["DTDK_Platform"] = "watchos"
         }
 
         let response: DeviceResponse = try await sendRequest(

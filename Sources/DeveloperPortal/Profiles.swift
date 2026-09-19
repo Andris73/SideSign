@@ -209,6 +209,12 @@ public extension DeveloperPortal {
             parameters["subPlatform"] = "macOS"
         } else if deviceType.contains(.visionPro) {
             parameters["subPlatform"] = "visionOS"
+        } else if deviceType.contains(.appleWatch) {
+            // Issue #229: watchOS installd requires a profile whose platform list includes
+            // watchOS. Apple only issues those when the request carries DTDK_Platform=watchos
+            // (on the regular ios endpoint) — this is what Xcode sends; there is no watch
+            // subPlatform. Recipe validated by nab138/isideload PR #12 on real hardware.
+            parameters["DTDK_Platform"] = "watchos"
         }
 
         do {
